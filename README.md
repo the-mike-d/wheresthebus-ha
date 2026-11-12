@@ -28,7 +28,7 @@ Defaults: afternoon run **14:00–15:00** on, morning run **06:00–07:00** off,
 ## Install
 
 ### HACS
-1. HACS → ⋮ → **Custom repositories** → add this repository's URL as an **Integration**.
+1. HACS → ⋮ → **Custom repositories** → add `https://github.com/mikedd732/wheresthebus-ha` as an **Integration**.
 2. Install **WheresTheBus (unofficial)** and restart Home Assistant.
 
 ### Manual

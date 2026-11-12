@@ -1,10 +1,13 @@
 {
   "domain": "wheresthebus",
   "name": "WheresTheBus",
-  "codeowners": [],
+  "codeowners": [
+    "@mikedd732"
+  ],
   "config_flow": true,
-  "documentation": "https://wheresthebus.com/",
+  "documentation": "https://github.com/mikedd732/wheresthebus-ha",
   "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/mikedd732/wheresthebus-ha/issues",
   "requirements": [],
   "version": "0.2.0"
 }
