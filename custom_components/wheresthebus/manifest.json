@@ -1,0 +1,10 @@
+{
+  "domain": "wheresthebus",
+  "name": "WheresTheBus",
+  "codeowners": [],
+  "config_flow": true,
+  "documentation": "https://wheresthebus.com/",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "0.2.0"
+}

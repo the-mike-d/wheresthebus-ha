@@ -1,0 +1,50 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "WheresTheBus (unofficial)",
+        "description": "Sign in with the same email and password you use in the WheresTheBus app.",
+        "data": {
+          "email": "Email",
+          "password": "Password"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Sign in to WheresTheBus again",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "WheresTheBus rejected that email or password.",
+      "cannot_connect": "Couldn't reach WheresTheBus. Try again in a minute."
+    },
+    "abort": {
+      "already_configured": "This WheresTheBus account is already set up.",
+      "reauth_successful": "Signed in again."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Bus alert settings",
+        "data": {
+          "home_zone": "Home location (a zone \u2014 edit it under Settings \u2192 Areas, labels & zones)",
+          "drive_minutes": "Travel time from home to the stop (minutes)",
+          "buffer_minutes": "Extra buffer (minutes)",
+          "alert_miles": "Also alert when the bus is within this many miles (0 = off)",
+          "am_enabled": "Track the morning run",
+          "am_window": "Morning window (HH:MM-HH:MM)",
+          "pm_enabled": "Track the afternoon run",
+          "pm_window": "Afternoon window (HH:MM-HH:MM)",
+          "weekdays_only": "Weekdays only"
+        },
+        "description": "\"Time to leave\" turns on when the bus is due within travel time + buffer, or within the alert distance."
+      }
+    },
+    "error": {
+      "bad_window": "Use 24-hour times like 06:00-09:30."
+    }
+  }
+}
