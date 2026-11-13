@@ -18,6 +18,8 @@ CONF_AM_ENABLED = "am_enabled"
 CONF_PM_ENABLED = "pm_enabled"
 CONF_HOME_ZONE = "home_zone"
 CONF_ALERT_MILES = "alert_miles"
+CONF_ALERT_MODE = "alert_mode"
+ALERT_MODES = ["distance", "time", "either"]
 
 DEFAULT_DRIVE_MIN = 3
 DEFAULT_BUFFER_MIN = 3
@@ -27,6 +29,7 @@ DEFAULT_AM_ENABLED = False
 DEFAULT_PM_ENABLED = True
 DEFAULT_HOME_ZONE = "zone.home"
 DEFAULT_ALERT_MILES = 1.0
+DEFAULT_ALERT_MODE = "distance"  # minutes estimates are unreliable on routes with many stops
 
 FAST_INTERVAL = 15  # seconds, matches the app
 IDLE_INTERVAL = 300  # seconds, outside bus windows (no API calls are made)

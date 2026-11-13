@@ -15,12 +15,15 @@ from homeassistant.helpers import selector
 
 from .api import WtbAuthError, WtbClient, WtbError
 from .const import (
+    ALERT_MODES,
     CONF_ALERT_MILES,
+    CONF_ALERT_MODE,
     CONF_AM_ENABLED,
     CONF_AM_WINDOW,
     CONF_HOME_ZONE,
     CONF_PM_ENABLED,
     DEFAULT_ALERT_MILES,
+    DEFAULT_ALERT_MODE,
     DEFAULT_AM_ENABLED,
     DEFAULT_HOME_ZONE,
     DEFAULT_PM_ENABLED,
@@ -41,6 +44,7 @@ DEFAULT_OPTIONS = {
     CONF_HOME_ZONE: DEFAULT_HOME_ZONE,
     CONF_DRIVE_MIN: DEFAULT_DRIVE_MIN,
     CONF_BUFFER_MIN: DEFAULT_BUFFER_MIN,
+    CONF_ALERT_MODE: DEFAULT_ALERT_MODE,
     CONF_ALERT_MILES: DEFAULT_ALERT_MILES,
     CONF_AM_ENABLED: DEFAULT_AM_ENABLED,
     CONF_AM_WINDOW: DEFAULT_AM_WINDOW,
@@ -123,6 +127,11 @@ class WtbOptionsFlow(OptionsFlow):
             {
                 vol.Required(CONF_HOME_ZONE, default=o[CONF_HOME_ZONE]): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="zone")
+                ),
+                vol.Required(CONF_ALERT_MODE, default=o[CONF_ALERT_MODE]): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=ALERT_MODES, translation_key=CONF_ALERT_MODE, mode=selector.SelectSelectorMode.LIST
+                    )
                 ),
                 vol.Required(CONF_DRIVE_MIN, default=o[CONF_DRIVE_MIN]): minutes,
                 vol.Required(CONF_BUFFER_MIN, default=o[CONF_BUFFER_MIN]): minutes,

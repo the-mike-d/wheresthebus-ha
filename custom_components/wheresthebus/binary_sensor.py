@@ -6,9 +6,11 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     CONF_ALERT_MILES,
+    CONF_ALERT_MODE,
     CONF_BUFFER_MIN,
     CONF_DRIVE_MIN,
     DEFAULT_ALERT_MILES,
+    DEFAULT_ALERT_MODE,
     DEFAULT_BUFFER_MIN,
     DEFAULT_DRIVE_MIN,
 )
@@ -24,7 +26,7 @@ async def async_setup_entry(hass, entry, async_add_entities: AddEntitiesCallback
 
 
 class WtbTimeToLeave(WtbEntity, BinarySensorEntity):
-    """On when the bus will reach the stop within travel time + buffer, or is within the alert distance."""
+    """On when the bus is within the alert distance (default), or due within travel time + buffer, per alert mode."""
 
     _attr_name = "Time to leave"
     _attr_icon = "mdi:car-clock"
@@ -42,15 +44,22 @@ class WtbTimeToLeave(WtbEntity, BinarySensorEntity):
         d = self.d
         if not d.get("tracking") or d.get("passed_stop"):
             return False
-        miles = float(self.coordinator.entry.options.get(CONF_ALERT_MILES, DEFAULT_ALERT_MILES) or 0)
+        o = self.coordinator.entry.options
+        mode = o.get(CONF_ALERT_MODE, DEFAULT_ALERT_MODE)
+        miles = float(o.get(CONF_ALERT_MILES, DEFAULT_ALERT_MILES) or 0)
         by_time = d.get("eta") is not None and d["eta"] <= self._lead
         by_distance = miles > 0 and d.get("distance") is not None and d["distance"] <= miles
-        return bool(by_time or by_distance)
+        if mode == "time":
+            return bool(by_time)
+        if mode == "either":
+            return bool(by_time or by_distance)
+        return bool(by_distance)
 
     @property
     def extra_state_attributes(self):
         o = self.coordinator.entry.options
         return {
+            "alert_mode": o.get(CONF_ALERT_MODE, DEFAULT_ALERT_MODE),
             "lead_minutes": self._lead,
             "drive_minutes": o.get(CONF_DRIVE_MIN, DEFAULT_DRIVE_MIN),
             "buffer_minutes": o.get(CONF_BUFFER_MIN, DEFAULT_BUFFER_MIN),
