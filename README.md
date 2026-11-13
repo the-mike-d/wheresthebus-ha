@@ -1,3 +1,5 @@
+<img src="icon.png" alt="" width="96" align="right">
+
 # WheresTheBus for Home Assistant (unofficial)
 
 Brings your child's school bus from the **WheresTheBus** parent app into Home Assistant: where the bus is, how far it is from your stop, roughly how many minutes away it is, and a **Time to leave** sensor you can use for alerts.
@@ -12,10 +14,10 @@ One device per student on your account (named after the bus number), with:
 |---|---|
 | `device_tracker` **Location** | The bus on the map while it's running |
 | `sensor` **Distance to stop** | Miles between the bus and your stop (as reported by WheresTheBus) |
-| `sensor` **Minutes away** | Estimated arrival. Uses WheresTheBus's ETA when it provides one, otherwise learns the bus's approach speed from successive positions (starts with a 15 mph assumption) |
-| `binary_sensor` **Time to leave** | On when the bus is due within *travel time + buffer*, or (optionally) within a set distance |
+| `sensor` **Minutes away** | Estimated arrival. Uses WheresTheBus's ETA when it provides one, otherwise learns the bus's approach speed from successive positions. Blank for the first 3 minutes of a run while the speed is learned, and after the bus reaches your stop |
+| `binary_sensor` **Time to leave** | On when the bus is due within *travel time + buffer*, or within the alert distance (1 mile by default). Stays off once the bus has reached your stop for that run |
 | `binary_sensor` **Bus en route** | On while the bus is reporting a position |
-| `sensor` **Status** | WheresTheBus status/notice text, or "Outside bus hours" |
+| `sensor` **Status** | WheresTheBus status/notice text, "Reached stop at 6:30 AM" once the bus gets to your stop, or "Outside bus hours" |
 | `sensor` **Scheduled time** | The stop time on file |
 | `sensor` **Home to stop** | Straight-line miles from your home zone to the stop |
 
@@ -41,7 +43,7 @@ Then open the integration's **Configure** button to adjust:
 
 - **Home location**: any zone (defaults to `zone.home`; edit it under *Settings → Areas, labels & zones*)
 - **Travel time** from home to the stop and an extra **buffer**, in minutes
-- **Alert distance**: also turn on *Time to leave* when the bus is within this many miles (0 = off)
+- **Alert distance**: also turn on *Time to leave* when the bus is within this many miles (default 1, 0 = off). Recommended: winding routes make the minutes estimate run high close to the stop, and the distance check catches that
 - Morning / afternoon tracking on/off and their time windows
 - Weekdays only
 
@@ -64,9 +66,14 @@ actions:
 Replace `1234` with your bus number (check the entity IDs under the integration's device).
 
 ## Notes and limits
-- Distance and ETA come from (or are derived from) WheresTheBus data. "Minutes away" is an estimate until the bus has moved for about a minute.
+- Distance and ETA come from (or are derived from) WheresTheBus data. "Minutes away" is a straight-line estimate, so routes that double back can make it jump around.
+- The bus counts as having reached your stop when it comes within 0.1 mile (about 500 ft) of it. The rest of that window, *Time to leave* stays off even if the route loops back past you.
 - If WheresTheBus rejects your password, Home Assistant will ask you to sign in again.
 - Tested with the School District of Lee County, FL. Other districts on WheresTheBus should work, but please open an issue if yours doesn't.
+
+## Changelog
+- **0.2.1**: Stop alerting after the bus reaches your stop; alert distance defaults to 1 mile; no ETA during the first 3 minutes of a run; higher minimum learned speed so early estimates don't spike; integration icon.
+- **0.2.0**: First public release.
 
 ## License
 MIT

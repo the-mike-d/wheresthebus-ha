@@ -33,14 +33,14 @@
           "home_zone": "Home location (a zone \u2014 edit it under Settings \u2192 Areas, labels & zones)",
           "drive_minutes": "Travel time from home to the stop (minutes)",
           "buffer_minutes": "Extra buffer (minutes)",
-          "alert_miles": "Also alert when the bus is within this many miles (0 = off)",
+          "alert_miles": "Also alert when the bus is within this many miles (0 = off, 1 recommended)",
           "am_enabled": "Track the morning run",
           "am_window": "Morning window (HH:MM-HH:MM)",
           "pm_enabled": "Track the afternoon run",
           "pm_window": "Afternoon window (HH:MM-HH:MM)",
           "weekdays_only": "Weekdays only"
         },
-        "description": "\"Time to leave\" turns on when the bus is due within travel time + buffer, or within the alert distance."
+        "description": "\"Time to leave\" turns on when the bus is due within travel time + buffer, or within the alert distance. It stays off after the bus reaches your stop."
       }
     },
     "error": {

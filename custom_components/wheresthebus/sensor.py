@@ -70,12 +70,14 @@ class WtbStatus(WtbEntity, SensorEntity):
         d = self.d
         if not self.coordinator.in_window():
             return "Outside bus hours"
+        if d.get("passed_stop") and d.get("passed_at"):
+            return f"Reached stop at {d['passed_at'].strftime('%-I:%M %p')}"
         return (d.get("notice") or d.get("eta_message") or ("Tracking" if d.get("tracking") else "Not running"))[:250]
 
     @property
     def extra_state_attributes(self):
         d = self.d
-        keys = ("status", "eta_message", "notice", "bus_no", "route_no", "stop_lat", "stop_lon", "school_lat", "school_lon")
+        keys = ("passed_stop", "passed_at", "status", "eta_message", "notice", "bus_no", "route_no", "stop_lat", "stop_lon", "school_lat", "school_lon")
         return {k: d.get(k) for k in keys}
 
 

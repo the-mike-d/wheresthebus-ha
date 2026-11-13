@@ -40,7 +40,7 @@ class WtbTimeToLeave(WtbEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         d = self.d
-        if not d.get("tracking"):
+        if not d.get("tracking") or d.get("passed_stop"):
             return False
         miles = float(self.coordinator.entry.options.get(CONF_ALERT_MILES, DEFAULT_ALERT_MILES) or 0)
         by_time = d.get("eta") is not None and d["eta"] <= self._lead

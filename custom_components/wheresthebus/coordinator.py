@@ -28,9 +28,12 @@ from .const import (
     DEFAULT_AM_WINDOW,
     DEFAULT_PM_WINDOW,
     DOMAIN,
-    FALLBACK_MPH,
+    ARRIVED_MILES,
     FAST_INTERVAL,
     IDLE_INTERVAL,
+    MAX_MPH,
+    MIN_MPH,
+    WARMUP_SECONDS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -76,25 +79,32 @@ class WtbCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._hist: dict[str, deque] = {}
         self._speed: dict[str, float] = {}
         self._server_time: dict[str, int] = {}
+        self._window_key: str | None = None
+        self._started: dict[str, float] = {}
+        self._passed: dict[str, datetime] = {}
 
     # ---- schedule -------------------------------------------------------
-    def in_window(self, now: datetime | None = None) -> bool:
+    def current_window(self, now: datetime | None = None) -> str | None:
+        """Key of the bus window we're in (e.g. '2026-11-13-am'), or None."""
         now = now or dt_util.now()
         opts = self.entry.options
         if opts.get(CONF_WEEKDAYS_ONLY, True) and now.weekday() >= 5:
-            return False
+            return None
         t = now.time()
         windows = (
-            (CONF_AM_ENABLED, DEFAULT_AM_ENABLED, CONF_AM_WINDOW, DEFAULT_AM_WINDOW),
-            (CONF_PM_ENABLED, DEFAULT_PM_ENABLED, CONF_PM_WINDOW, DEFAULT_PM_WINDOW),
+            ("am", CONF_AM_ENABLED, DEFAULT_AM_ENABLED, CONF_AM_WINDOW, DEFAULT_AM_WINDOW),
+            ("pm", CONF_PM_ENABLED, DEFAULT_PM_ENABLED, CONF_PM_WINDOW, DEFAULT_PM_WINDOW),
         )
-        for en_key, en_default, key, default in windows:
+        for name, en_key, en_default, key, default in windows:
             if not opts.get(en_key, en_default):
                 continue
             w = parse_window(opts.get(key, default))
             if w and w[0] <= t <= w[1]:
-                return True
-        return False
+                return f"{now.date().isoformat()}-{name}"
+        return None
+
+    def in_window(self, now: datetime | None = None) -> bool:
+        return self.current_window(now) is not None
 
     def home_coords(self) -> tuple[float, float] | None:
         """Home location from the chosen zone (Settings > Areas & zones), not from WheresTheBus."""
@@ -106,7 +116,15 @@ class WtbCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     # ---- polling --------------------------------------------------------
     async def _async_update_data(self) -> dict[str, Any]:
-        active = self.in_window()
+        window = self.current_window()
+        active = window is not None
+        if window != self._window_key:
+            # New window (or window ended): forget the previous run.
+            self._window_key = window
+            self._hist.clear()
+            self._speed.clear()
+            self._started.clear()
+            self._passed.clear()
         self.update_interval = timedelta(seconds=FAST_INTERVAL if active else IDLE_INTERVAL)
         try:
             now = dt_util.utcnow()
@@ -139,7 +157,16 @@ class WtbCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
 
     def _empty(self, child: dict[str, Any]) -> dict[str, Any]:
-        return {"child": child, "tracking": False, "bus_lat": None, "bus_lon": None, "distance": None, "eta": None}
+        return {
+            "child": child,
+            "tracking": False,
+            "bus_lat": None,
+            "bus_lon": None,
+            "distance": None,
+            "eta": None,
+            "passed_stop": False,
+            "passed_at": None,
+        }
 
     def _compute(self, cid: str, child: dict[str, Any], raw: dict[str, Any]) -> dict[str, Any]:
         lat, lon, dist = _num(raw.get("busLat")), _num(raw.get("busLon")), _num(raw.get("dist"))
@@ -147,6 +174,13 @@ class WtbCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             dist = dist * 0.621371
         has_bus = bool(lat and lon) and dist is not None
         now = dt_util.utcnow().timestamp()
+
+        if has_bus:
+            self._started.setdefault(cid, now)
+            if dist <= ARRIVED_MILES and cid not in self._passed:
+                self._passed[cid] = dt_util.now()
+        passed = cid in self._passed
+        warming_up = now - self._started.get(cid, now) < WARMUP_SECONDS
 
         # Learn the bus's approach speed from successive distances.
         hist = self._hist.setdefault(cid, deque(maxlen=40))
@@ -160,19 +194,22 @@ class WtbCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             t0, d0 = hist[0]
             if now - t0 >= 45 and d0 - dist > 0.05:
                 mph = (d0 - dist) / ((now - t0) / 3600)
-                mph = max(5.0, min(45.0, mph))
+                mph = max(MIN_MPH, min(MAX_MPH, mph))
                 prev = self._speed.get(cid)
                 self._speed[cid] = mph if prev is None else prev * 0.6 + mph * 0.4
 
         eta = None
         eta_src = None
         m = re.search(r"(\d+)\s*min", str(raw.get("etaMsg") or ""), re.I)
-        if m:
+        if passed:
+            eta_src = "passed stop"
+        elif m:
             eta, eta_src = float(m.group(1)), "wheresthebus"
+        elif has_bus and not warming_up and cid in self._speed:
+            eta = round(dist / self._speed[cid] * 60, 1)
+            eta_src = "learned speed"
         elif has_bus:
-            speed = self._speed.get(cid)
-            eta = round(dist / (speed or FALLBACK_MPH) * 60, 1)
-            eta_src = "learned speed" if speed else "estimate"
+            eta_src = "learning speed"
 
         return {
             "child": child,
@@ -182,6 +219,8 @@ class WtbCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "distance": round(dist, 2) if dist is not None else None,
             "eta": eta,
             "eta_source": eta_src,
+            "passed_stop": passed,
+            "passed_at": self._passed.get(cid),
             "speed_mph": round(self._speed[cid], 1) if cid in self._speed else None,
             "stop_lat": _num(raw.get("stpLat")),
             "stop_lon": _num(raw.get("stpLon")),

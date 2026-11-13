@@ -26,8 +26,12 @@ DEFAULT_PM_WINDOW = "14:00-15:00"
 DEFAULT_AM_ENABLED = False
 DEFAULT_PM_ENABLED = True
 DEFAULT_HOME_ZONE = "zone.home"
-DEFAULT_ALERT_MILES = 0.0
+DEFAULT_ALERT_MILES = 1.0
 
 FAST_INTERVAL = 15  # seconds, matches the app
 IDLE_INTERVAL = 300  # seconds, outside bus windows (no API calls are made)
-FALLBACK_MPH = 15.0  # used for ETA until the bus's own speed is known
+FALLBACK_MPH = 15.0  # kept for reference; ETA is hidden until the bus's own speed is learned
+MIN_MPH = 8.0  # floor for the learned speed (stops at other kids' houses drag it down)
+MAX_MPH = 45.0
+WARMUP_SECONDS = 180  # no ETA until this long after tracking starts in a window
+ARRIVED_MILES = 0.1  # WheresTheBus reports tenths of a mile; bus this close to the stop = it has reached the stop
